@@ -4,7 +4,8 @@
 *  COMPRE:    https://www.arducore.com.br/
 */
 #include <LiquidCrystal.h>
-#include "DHT.h"
+#include <DHT_U.h>
+#include <DHT.h>
 
 #define DHTPIN A1 // pino que estamos conectado
 #define DHTTYPE DHT11 // DHT 11
@@ -39,6 +40,9 @@ DHT dht(DHTPIN, DHTTYPE);
 
 unsigned long delayBotao;
 int estadoBotaoAnt = btNENHUM;
+int pinLed = 12; // led conectado no pino digital 12
+int pinSensor = 2; // módulo conectado no pino digial 2
+int pinSensorAnalogico = A0; // módulo conectado no pino analógico A0
 
 void estadoBotao(int botao);
 void botaoApertado(int botao);
@@ -64,7 +68,12 @@ void setup() {
   lcd.createChar(0, grau);
   lcd.begin(16, 2);
   Serial.begin(9600);
-   dht.begin();
+  dht.begin();
+
+  Serial.begin(9600);
+  pinMode(pinSensor, INPUT); // define como entrada
+  pinMode(pinLed, OUTPUT); // definoe como saída   
+  digitalWrite(pinLed, LOW); // led incia apagado
 }
 
 void loop() {
@@ -75,6 +84,7 @@ void loop() {
      
   } else if ((valBotoes < 600) && (valBotoes >= 400)) {
      estadoBotao(btLEFT);
+     
      
   } else if ((valBotoes < 400) && (valBotoes >= 200)) {
      estadoBotao(btUP);
@@ -92,8 +102,40 @@ void loop() {
 
 void estadoBotao(int botao) {
   //Quando um botao estiver apertado
+  
   if (botao == btNENHUM) {
-     float h = dht.readHumidity(); //Le o valor da umidade
+    
+    lcd.setCursor(14,0);
+    lcd.setCursor(3,1);
+    lcd.print("ABELHA APP");
+    
+  }
+  
+  if (botao == btLEFT){   
+            
+            Serial.println(analogRead(pinSensorAnalogico));
+            if (digitalRead(pinSensor) == LOW){ // se for LOW 
+            digitalWrite(pinLed, HIGH); // acende o led
+            } else { // caso contrário
+            digitalWrite(pinLed, LOW); // apaga o led
+            }  
+              
+         do{
+            
+            lcd.setCursor(14,0);
+            lcd.setCursor(3,1);
+            lcd.print("ABELHA PASSOU");
+                
+          }       
+         
+          while (pinSensorAnalogico > 500);
+          
+                
+  }    
+    
+    if (botao == btRIGHT){
+
+          float h = dht.readHumidity(); //Le o valor da umidade
      float t = dht.readTemperature(); //Le o valor da temperatura
      lcd.setCursor(0,0);
      lcd.print("Temp : ");
@@ -119,45 +161,21 @@ lcd.print("%");
 //Intervalo recomendado para leitura do sensor
 delay(2000);
      Serial.println(botao);
-  }
-
-  //Quando o botao for apertado ou solto
-  if ((millis() - delayBotao) > tempoDebounce) {
+        
+      }
+   //Quando o botao for apertado ou solto
+      if ((millis() - delayBotao) > tempoDebounce) {
      if ((botao != btNENHUM) && (estadoBotaoAnt == btNENHUM) ) {
-        botaoApertado(botao); 
+       
         delayBotao = millis();
+         lcd.clear();
      }
 
      if ((botao == btNENHUM) && (estadoBotaoAnt != btNENHUM) ) {
-        botaoSolto(estadoBotaoAnt); 
+        
         delayBotao = millis();
+        lcd.clear();
      }
   }
   estadoBotaoAnt = botao;
-}
-
-void botaoApertado(int botao) {
-  //Quando um botão for apertado
-
-  //Para o exemplo de uso
-  contador++;
-  lcd.clear();
-  lcd.print(descBotao[botao]);
-  lcd.setCursor(14,0);
-  lcd.print(contador);
-  lcd.setCursor(0,1);
-  lcd.print("luciano");
-}
-
-void botaoSolto(int botao) {
-  //Quando um botão for solto
-
-
-  //Para o exemplo de uso
-  lcd.clear();
-  lcd.print(descBotao[botao]);
-  lcd.setCursor(14,0);
-  lcd.print(contador);
-  lcd.setCursor(0,1);
-  lcd.print("solto");
 }
